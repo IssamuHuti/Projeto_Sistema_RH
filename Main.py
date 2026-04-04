@@ -1,147 +1,7 @@
-from imaplib import Int2AP
-import os
-import re
 import sqlite3
-from datetime import datetime, timedelta
-
-
-# CONSTANTES
-
-FUNCIONARIO_ID              = 0
-FUNCIONARIO_NOME            = 1
-FUNCIONARIO_CPF             = 2
-FUNCIONARIO_CARGO           = 3
-FUNCIONARIO_DATA_ADMISSAO   = 4
-FUNCIONARIO_DATA_DEMISSAO   = 5
-FUNCIONARIO_ADVERTENCIA     = 6
-FUNCIONARIO_VALE_TRANSPORTE = 7
-FUNCIONARIO_DEPENDENTE      = 8
-FUNCIONARIO_NIVEL_ENSINO    = 9
-FUNCIONARIO_CNH             = 10
-FUNCIONARIO_EMAIL           = 11
-
-CARGO_ID             = 0
-CARGO_NOME           = 1
-CARGO_ID_DEP         = 2
-CARGO_SALARIO        = 3
-CARGO_NUMERO_MAXIMO  = 4
-CARGO_NECESSARIO_CNH = 5
-
-PAGAMENTO_ID             = 0
-PAGAMENTO_MES            = 1
-PAGAMENTO_ANO            = 2
-PAGAMENTO_ID_FUNCIONARIO = 3
-PAGAMENTO_CARGO          = 4
-PAGAMENTO_DEPARTAMENTO   = 5
-PAGAMENTO_FALTAS         = 6
-PAGAMENTO_SALARIO_PAGO   = 7
-
-DEPARTAMENTO_ID   = 0
-DEPARTAMENTO_NOME = 1
-
-def LimparTela():
-    os.system( 'cls' if os.name == 'nt' else 'clear' )
-
-def InputInt( descricao ):
-    while True:
-        try:
-            valor = input( descricao ) 
-            if not valor.isnumeric():
-                print( "Digite somente números" )
-                continue
-
-            return int( valor )
-        
-        except:
-            print( 'Digite somente números inteiros' )
-
-def InputStr( descricao, nTamanho ):
-    while True:
-        try:
-            usuario = input( descricao )
-            if not usuario:
-                print( 'Digite um valor' )
-                continue
-
-            elif len(usuario) <= nTamanho:
-                return usuario
-            
-            else:
-                print( f'Digite até {nTamanho} de caracteres')
-                input()
-                continue
-
-        except:
-            print( 'O campo está limitado até ' + str( nTamanho ) + ' caracterer(s)')
-
-def InputStrUpper( descricao, nTamanho ):
-    while True:
-        try:
-            usuario = input( descricao )
-            if not usuario:
-                print( 'Digite um valor' )
-                input()
-                continue
-
-            elif len(usuario) <= nTamanho:
-                return usuario.upper()
-            
-            else:
-                print( f'Digite até {nTamanho} de caracteres')
-                input()
-                continue
-
-        except:
-            print( 'O campo está limitado até ' + str( nTamanho ) + 'de caracteres')
-
-def InputData( descricao ):
-    while True:
-        captura_data = input( descricao )
-        try:
-            data = datetime.strptime( captura_data, "%d%m%Y" ).date()
-            return data.strftime('%y/%m/%d')
-
-        except ValueError:
-            print( 'Data inválida. Use o formato DDMMAAAA' )
-            continue
-
-def InputEmail( descricao ):
-    while True:
-        capturaEmail = input( descricao )
-
-        if '@' not in capturaEmail or '.' not in capturaEmail.split('@')[-1]:
-            print( 'Email inválido tente novamente\nO email deve posuir "@" e ".com"' )
-            continue
-        
-        return capturaEmail
-
-def VerificaCPF():
-    while True:
-        cpf = InputStr( 'CPF..:', 11 )
-    
-        if not len( cpf ) == 11:
-            print( 'O CPF precisa conter 11 digitos' )
-            input()
-            continue
-
-        if not cpf.isnumeric():
-            print( 'Digite somente números' )
-            input()
-            continue
-        
-        return cpf 
-
-def Confirmacao( texto ):
-    while True:
-        opcao = InputStrUpper( texto, 1 )
-        if opcao == 'S':
-            return True
-        
-        elif opcao == 'N':
-            return False
-        
-        else:
-            print( 'Digite somente [S]im ou [N]ao' )
+from datetime import datetime
+from utils import LimparTela, InputStr, InputStrUpper, InputInt, InputData, InputEmail, VerificaCPF, Confirmacao, Pausar
+from utils import Funcionario, Cargo, Pagamento, Departamento
 
 
 def Main():
@@ -188,8 +48,7 @@ def Main():
             break
 
         else:
-            print( 'Opção inválida. Tente novamente.' )
-            input()
+            Pausar( 'Opção inválida. Tente novamente.' )
 
     conexaoinformacaoRH.close()
 
@@ -271,7 +130,7 @@ def CadastrarNovoFuncionario( cursor, conexaoinformacaoRH ):
         LimparTela()
         print( '--- Cadastro de Funcionario ---' )
 
-        colaborador = InputStr( 'Nome.: ', 40 )
+        colaborador = InputStrUpper( 'Nome.: ', 40 )
         if colaborador == '0':
             return
         
@@ -287,7 +146,7 @@ def CadastrarNovoFuncionario( cursor, conexaoinformacaoRH ):
             )
             cpfCadastrado = cursor.fetchone()
             if cpfCadastrado:
-                print( 'CPF já cadastrado, tente outro CPF ou digite 00000000000 para sair' )
+                Pausar( 'CPF já cadastrado, tente outro CPF ou digite 00000000000 para sair' )
                 continue
             
             break
@@ -299,7 +158,7 @@ def CadastrarNovoFuncionario( cursor, conexaoinformacaoRH ):
 
             cargoCadastrado = BuscarCargo( cursor, id_cargo )
             if not cargoCadastrado:
-                print( 'Digite um cargo cadastrado ou 0 para sair' )
+                Pausar( 'Digite um cargo cadastrado ou 0 para sair' )
                 continue
             
             break
@@ -320,14 +179,14 @@ def CadastrarNovoFuncionario( cursor, conexaoinformacaoRH ):
 
         while True:
             cnh = InputStrUpper( 'CNH: ', 1 )
-            if cargoCadastrado[ CARGO_NECESSARIO_CNH ] == 'S':
+            if cargoCadastrado[ Cargo.NECESSARIO_CNH ] == 'S':
                 if cnh not in 'ABCD':
-                    print('Necessário possuir CNH válida (A/B/C/D)')
+                    Pausar( 'Necessário possuir CNH válida (A/B/C/D)' )
                     continue
                 break
             else:
                 if cnh not in 'ABCDN':
-                    print('Digite o tipo de carteira (A/B/C/D/N)')
+                    Pausar( 'Digite o tipo de carteira (A/B/C/D/N)' )
                     continue
                 break
         
@@ -359,17 +218,17 @@ def CadastrarCargo( cursor, conexaoinformacaoRH ):
         if dadosCargo:
             print( 'Cargos da Empresa' )
             for dadoCargo in dadosCargo:
-                print( f'{ dadoCargo[ CARGO_ID ] } - { dadoCargo[ CARGO_NOME ] }' )
+                print( f'{ dadoCargo[ Cargo.ID ] } - { dadoCargo[ Cargo.NOME ] }' )
 
         print()
         while True:
             LimparTela()
 
-            cargo = InputStr( 'Digite o cargo: ', 20 )
-            if any( cargo.upper() == dadoCargo[ CARGO_NOME ] for dadoCargo in dadosCargo ):
-                print( 'Cargo já registrado' )
+            cargo = InputStrUpper( 'Digite o cargo: ', 20 )
+            if any( cargo.upper() == dadoCargo[ Cargo.NOME ] for dadoCargo in dadosCargo ):
+                Pausar( 'Cargo já registrado' )
 
-                continuar = input( 'Deseja cadastrar outro cargo(S/N)? ' )
+                continuar = InputStrUpper( 'Deseja cadastrar outro cargo(S/N)? ', 1 )
                 if not continuar:
                     return
                 
@@ -408,7 +267,7 @@ def CadastrarCargo( cursor, conexaoinformacaoRH ):
                     
             break
 
-        salario       = float( input( 'Digite o salário: ' ) )
+        salario       = float( InputInt( 'Digite o salário: ' ) )
         numero_maximo = InputInt( 'Digite o número máximo de funcionários para este cargo: ' )
         necessita_cnh = InputStrUpper( 'Necessita possuir CNH(S/N)? ', 1 )
 
@@ -442,12 +301,12 @@ def CadastrarDepartamento( cursor, conexaoinformacaoRH ):
             print()
             print( 'Depatamentos da Empresa' )
             for dadoDepartamento in listas:
-                print( f'{ dadoDepartamento[ DEPARTAMENTO_ID ] } - { dadoDepartamento[ DEPARTAMENTO_NOME ] }' )
+                print( f'{ dadoDepartamento[ Departamento.ID ] } - { dadoDepartamento[ Departamento.NOME ] }' )
             print()
         
         while True:
             departamento = InputStrUpper( 'Departamento: ', 20 )
-            if any( departamento == dadoDepartamento[ DEPARTAMENTO_NOME ] for dadoDepartamento in listas ):
+            if any( departamento == dadoDepartamento[ Departamento.NOME ] for dadoDepartamento in listas ):
                 print( 'Departamento já registrado' )
 
                 continuar = Confirmacao( 'Deseja cadastrar outro cargo(S/N)? ' )
@@ -489,21 +348,26 @@ def ListarFuncionarios( cursor, conexaoinformacaoRH ):
             return
         
     print( '--- Lista de Funcionarios Ativos ---' )
+    print()
+    print( f'{ '{:40.40}'.format( 'FUNCIONARIO' ) } | { '{:30.30}'.format( 'CARGO' ) } | { '{:40.40}'.format( 'DEPARTAMENTO' ) } | { '{:10.10}'.format( 'SALARIO' ) }' )
 
     for funcionario in selecaoFuncionarios:
         
-        selecaoCargo = BuscarCargo( cursor, funcionario[ FUNCIONARIO_CARGO ] )
+        selecaoCargo = BuscarCargo( cursor, funcionario[ Funcionario.CARGO ] )
 
         cursor.execute(
             "SELECT * FROM Departamento WHERE id = ?",
-            ( selecaoCargo[ CARGO_ID_DEP ], )
+            ( selecaoCargo[ Cargo.ID_DEP ], )
         )
         selecaoDep = cursor.fetchone()
 
-        print( f'{ funcionario[ FUNCIONARIO_ID ] } { funcionario[ FUNCIONARIO_NOME ] } { selecaoCargo[ CARGO_ID ] }-{ selecaoCargo[ CARGO_NOME ] } { selecaoDep[ DEPARTAMENTO_ID ] }-{ selecaoDep[ DEPARTAMENTO_NOME ] } { selecaoCargo[ CARGO_SALARIO ] }' )
+        descricaoFuncionario = f'{ funcionario[ Funcionario.ID ] } { funcionario[ Funcionario.NOME ] }'
+        descricaoCargo       = f'{ selecaoCargo[ Cargo.ID ] } { selecaoCargo[ Cargo.NOME ] }'
+        descricaoDep         = f'{ selecaoDep[ Departamento.ID ] } { selecaoDep[ Departamento.NOME ] }'
+        print( f'{ descricaoFuncionario[ :40 ].ljust( 40 ) } | { descricaoCargo[ :30 ].ljust( 30 ) } | { descricaoDep[ :40 ].ljust( 40 ) } | { '{:>10.10}'.format('{:.2f}'.format( selecaoCargo[ Cargo.SALARIO ] )) }' )
 
     print()
-    detalharFuncionario = Confirmacao( 'Deseja consultar algum funcionário?' )
+    detalharFuncionario = Confirmacao( 'Deseja consultar algum funcionário(S/N)? ' )
     if not detalharFuncionario:
         return
     
@@ -520,11 +384,11 @@ def ListarFuncionarios( cursor, conexaoinformacaoRH ):
             print( 'Digite um ID existente' )
             continue
 
-        selecaoCargo = BuscarCargo( cursor, selecaoFuncionario[ FUNCIONARIO_CARGO ] )
+        selecaoCargo = BuscarCargo( cursor, selecaoFuncionario[ Funcionario.CARGO ] )
 
         cursor.execute(
             "SELECT * FROM Departamento WHERE id = ?",
-            ( selecaoCargo[ CARGO_ID_DEP ], )
+            ( selecaoCargo[ Cargo.ID_DEP ], )
         )
         selecaoDep = cursor.fetchone()
 
@@ -540,21 +404,26 @@ def ListarCargos( cursor, conexaoinformacaoRH ):
     )
     selecaoCargos = cursor.fetchall()
     if not selecaoCargos:
-        print( 'Não há Cargos registrado' )
-        input()
+        Pausar( 'Não há Cargos registrado' )
         return
     
+    print( '--- Lista de Cargos ---' )
+    print()
+    print( f'{ '{:30.30}'.format( 'CARGO' ) } | { '{:40.40}'.format( 'DEPARTAMENTO' ) } | { '{:10.10}'.format( 'SALARIO' ) } | { '{:3.3}'.format( 'CNH' ) } | { '{:3.3}'.format( 'MAX' ) }' )
+
     for cargo in selecaoCargos:
 
         cursor.execute(
             "SELECT * FROM Departamento WHERE id = ?",
-            ( cargo[ CARGO_ID_DEP ], )
+            ( cargo[ Cargo.ID_DEP ], )
         )
         selecaoDep = cursor.fetchone()
 
-        print( f'{ cargo[ CARGO_ID ] }-{ cargo[CARGO_NOME] } { selecaoDep[ DEPARTAMENTO_ID ] }-{ selecaoDep[ DEPARTAMENTO_NOME ] } { cargo[ CARGO_SALARIO ] } { cargo[ CARGO_NECESSARIO_CNH ] } {cargo[ CARGO_NUMERO_MAXIMO ]}' )
+        descricaoCargo = f'{ cargo[ Cargo.ID ] } { cargo[ Cargo.NOME ] }'
+        descricaoDep   = f'{ selecaoDep[ Departamento.ID ] } { selecaoDep[ Departamento.NOME ] }'
+        print( f'{ descricaoCargo[ :30 ].ljust( 30 ) } | { descricaoDep[ :40 ].ljust( 40 ) } | { '{:>10.10}'.format( '{:.2f}'.format( cargo[ Cargo.SALARIO ] ) ) } | { '{:>3.3}'.format( cargo[ Cargo.NECESSARIO_CNH ] ) } | { '{:>3.3}'.format( str( cargo[ Cargo.NUMERO_MAXIMO ] ) ) }' )
 
-    input()
+    Pausar( 'Tecle algum teclado para sair voltar ao Menu...' )
 
 
 def ListarDepartamentos( cursor, conexaoinformacaoRH ):
@@ -575,11 +444,13 @@ def ListarDepartamentos( cursor, conexaoinformacaoRH ):
             return
     
     LimparTela()
-    print( 'Departamentos da empresa' )
+    print( '--- Departamentos da Empresa ---' )
+    print()
     for departamento in selecaoDep:
-        print( f'{ departamento[ DEPARTAMENTO_ID ] } - { departamento[ DEPARTAMENTO_NOME ] }' )
+        descricaoDep   = f'{ departamento[ Departamento.ID ] } { departamento[ Departamento.NOME ] }'
+        print( f'{ descricaoDep }' )
     
-    input()
+    Pausar( 'Tecle algum teclado para sair voltar ao Menu...' )
 
 
 def ListarDesligados( cursor, conexaoinformacaoRH ):
@@ -595,19 +466,24 @@ def ListarDesligados( cursor, conexaoinformacaoRH ):
         
     print( '--- Lista de Funcionarios Desligado ---' )
 
+    print( f'{ '{:40.40}'.format( 'FUNCIONARIO' ) } | { '{:30.30}'.format( 'CARGO' ) } | { '{:40.40}'.format( 'DEPARTAMENTO' ) } | { '{:10.10}'.format( 'SALARIO' ) }' )
     for funcionario in selecaoFuncionarios:
     
-        selecaoCargo = BuscarCargo( cursor, funcionario[ FUNCIONARIO_CARGO ] )
+        selecaoCargo = BuscarCargo( cursor, funcionario[ Funcionario.CARGO ] )
 
         cursor.execute(
             "SELECT * FROM Departamento WHERE id = ?",
-            ( selecaoCargo[ CARGO_ID_DEP ], )
+            ( selecaoCargo[ Cargo.ID_DEP ], )
         )
         selecaoDep = cursor.fetchone()
 
-        print( f'{ funcionario[ FUNCIONARIO_ID ] } { funcionario[ FUNCIONARIO_NOME ] } { selecaoCargo[ CARGO_ID ] }-{ selecaoCargo[ CARGO_NOME ] } { selecaoDep[ DEPARTAMENTO_ID ] }-{ selecaoDep[ DEPARTAMENTO_NOME ] } { selecaoCargo[ CARGO_SALARIO ] }' )
+        descricaoFuncionario = f'{ funcionario[ Funcionario.ID ] } { funcionario[ Funcionario.NOME ] }'
+        descricaoCargo       = f'{ selecaoCargo[ Cargo.ID ] } { selecaoCargo[ Cargo.NOME ] }'
+        descricaoDep         = f'{ selecaoDep[ Departamento.ID ] } { selecaoDep[ Departamento.NOME ] }'
 
-    input()
+        print( f'{ descricaoFuncionario[ :40 ].ljust( 40 ) } | { descricaoCargo[ :30 ].ljust( 30 ) } | { descricaoDep[ :40 ].ljust( 40 ) } | { '{:>10.10}'.format('{:.2f}'.format( selecaoCargo[ Cargo.SALARIO ] )) }' )
+
+    Pausar( 'Tecle algum teclado para sair voltar ao Menu...' )
 
 
 def Listar( cursor, conexaoinformacaoRH ):
@@ -633,8 +509,7 @@ def Listar( cursor, conexaoinformacaoRH ):
         elif opcaoListagem == 0:
             return
         else:
-            print( 'Digite somente as opções acima!' )
-            input()
+            Pausar( 'Digite somente as opções acima!' )
 
 
 def RodarFolhaMes( cursor, conexaoinformacaoRH ):
@@ -645,12 +520,11 @@ def RodarFolhaMes( cursor, conexaoinformacaoRH ):
             LimparTela()
             print( 'Fechamento de folha' )
             mes = InputInt( 'Mês: ' )
-            if mes == 0:
+            if not mes:
                 return
             
             elif mes > 12:
-                print( 'Digite somente de 1 a 12' )
-                input()
+                Pausar( 'Digite somente de 1 a 12' )
                 continue
 
             break
@@ -665,7 +539,7 @@ def RodarFolhaMes( cursor, conexaoinformacaoRH ):
         )
         selecaoFechamento = cursor.fetchone()
         if selecaoFechamento:
-            print( f'{ mes }/{ ano } já está fechado' )
+            Pausar( f'{ mes }/{ ano } já está fechado' )
             continue
 
         cursor.execute(
@@ -674,29 +548,28 @@ def RodarFolhaMes( cursor, conexaoinformacaoRH ):
         )
         selecaoFuncionarios = cursor.fetchall()
         if not selecaoFuncionarios:
-            print( 'Nenhum funcionário cadastrado' )
-            input()
+            Pausar( 'Nenhum funcionário cadastrado' )
+            return
 
         print('PAGAMENTO DE FOLHA' )
         for funcionario in selecaoFuncionarios:
             
-            selecaoCargo = BuscarCargo( cursor, funcionario[ FUNCIONARIO_CARGO ] )
+            selecaoCargo = BuscarCargo( cursor, funcionario[ Funcionario.CARGO ] )
 
-            print( f'Colaborador: { funcionario[ FUNCIONARIO_ID ] }-{ funcionario[ FUNCIONARIO_NOME ] }' )
-            print( f'Cargo......: { funcionario[ FUNCIONARIO_CARGO ] }-{ selecaoCargo[ CARGO_NOME ] }' )
-            print( f'Salario....: { selecaoCargo[ CARGO_SALARIO ] }' )
+            print( f'Colaborador: { funcionario[ Funcionario.ID ] }-{ funcionario[ Funcionario.NOME ] }' )
+            print( f'Cargo......: { funcionario[ Funcionario.CARGO ] }-{ selecaoCargo[ Cargo.NOME ] }' )
+            print( f'Salario....: { selecaoCargo[ Cargo.SALARIO ] }' )
             print()
 
-            salarioFuncionario = selecaoCargo[ CARGO_SALARIO ]
+            salarioFuncionario = selecaoCargo[ Cargo.SALARIO ]
 
             teveFalta = Confirmacao( 'Teve falta(S/N)? ' )
             if not teveFalta:
                 cursor.execute(
                     "INSERT INTO Pagamentos ( mes, ano, id_funcionario, id_cargo, faltas, salario_pago ) VALUES ( ?, ?, ?, ?, ?, ? )",
-                    ( mes, ano, funcionario[ FUNCIONARIO_ID ], funcionario[ FUNCIONARIO_CARGO ], 0, salarioFuncionario )
+                    ( mes, ano, funcionario[ Funcionario.ID ], funcionario[ Funcionario.CARGO ], 0, salarioFuncionario )
                 )
                 continue
-
             descontoVT          = 0
             descontoFalta       = 0
             acrescimoDependente = 0
@@ -705,47 +578,106 @@ def RodarFolhaMes( cursor, conexaoinformacaoRH ):
             if faltas > 0:
                 descontoFalta = salarioFuncionario / 30 * faltas 
 
-            if funcionario[ FUNCIONARIO_VALE_TRANSPORTE ] == 'S':
+            if funcionario[ Funcionario.VALE_TRANSPORTE ] == 'S':
                 descontoVT = salarioFuncionario * 0.05
             
-            if funcionario[ FUNCIONARIO_DEPENDENTE ] >= 3:
+            if funcionario[ Funcionario.DEPENDENTE ] >= 3:
                 acrescimoDependente = salarioFuncionario * 3 / 100
 
-            elif funcionario[ FUNCIONARIO_DEPENDENTE ] > 0:
-                acrescimoDependente = salarioFuncionario * funcionario[ FUNCIONARIO_DEPENDENTE ] / 100
+            elif funcionario[ Funcionario.DEPENDENTE ] > 0:
+                acrescimoDependente = salarioFuncionario * funcionario[ Funcionario.DEPENDENTE ] / 100
 
-            salarioPagar = salarioFuncionario - descontoVT - descontoFalta + acrescimoDependente
+            dataAdmissao = datetime.strptime( funcionario[ Funcionario.DATA_ADMISSAO ], '%Y-%m-%d' )
+            tempoDeServico = ( datetime.now() - dataAdmissao ).days // 364.25 // 5
+            acrescimoPorTempo = salarioFuncionario * ( 0.05 * tempoDeServico )
+
+            salarioPagar = salarioFuncionario - descontoVT - descontoFalta + acrescimoDependente + acrescimoPorTempo
 
             cursor.execute(
                 "INSERT INTO Pagamentos ( mes, ano, id_funcionario, id_cargo, faltas, salario_pago ) VALUES ( ?, ?, ?, ?, ?, ? )",
-                ( mes, ano, funcionario[ FUNCIONARIO_ID ], funcionario[ FUNCIONARIO_CARGO ], faltas, salarioPagar )
+                ( mes, ano, funcionario[ Funcionario.ID ], funcionario[ Funcionario.CARGO ], faltas, salarioPagar )
             )
 
         conexaoinformacaoRH.commit()
 
-        print( 'Fechamento de folha realizada com sucesso' )
+        Pausar( 'Fechamento de folha realizada com sucesso' )
         break
 
 
 def RelatorioFolha( cursor, conexaoinformacaoRH ):
 
+    LimparTela()
+    cursor.execute(
+        "SELECT * FROM Pagamentos"
+    )
+    verificaPagamento = cursor.fetchall()
+
+    if not verificaPagamento:
+        Pausar( 'Não foi encontrado nenhum registro de pagamento realizado' )
+        return
+
+    print( '--- Relatorio de Folha mensal ---' )
     print()
+
+    mes = InputInt( 'Digite o mês: ' )
+    if not mes:
+        return 
+
+    ano = InputInt( 'Digite o ano: ' )
+    if not ano:
+        return 
+    
+    cursor.execute(
+        "SELECT * FROM Pagamentos WHERE mes = ? and ano = ?",
+        ( mes, ano )
+    )
+    verificaPagamentoRealizados = cursor.fetchall()
+
+    if not verificaPagamentoRealizados:
+        Pausar( 'Não foi encontrado nenhum pagamento realizado no filtro selecionado' )
+        return
+    
+    print( f'Pagamento Folha - { mes }/{ ano }' )
+    totalPagamento = 0
+
+    print( 'PERIODO | ' + '{:41.41}'.format( 'COLABORADOR' ) + '| FALTAS |  PAGAMENTO' )
+    for pagamento in verificaPagamentoRealizados:
+
+        funcionario    = pagamento[ Pagamento.ID_FUNCIONARIO ]
+        salario        = pagamento[ Pagamento.SALARIO_PAGO ]
+        totalPagamento += pagamento[ Pagamento.SALARIO_PAGO ]
+
+        cursor.execute(
+            "SELECT * FROM Funcionarios WHERE id = ?",
+            ( funcionario, )
+        )
+        verificaFuncionario = cursor.fetchone()
+        if not verificaFuncionario:
+            continue
+
+        identificacaoFuncionario = f'{ str( funcionario ) }-{ verificaFuncionario[ Funcionario.NOME ] }'
+        print( f'{ str( mes ).zfill( 2 ) }/{ str( ano ).zfill( 4 ) } | { identificacaoFuncionario[ :40 ].ljust( 40 ) } | { '{:>6.6}'.format( str( pagamento[ Pagamento.FALTAS ] ) ) } | { '{:>10.10}'.format( '{:.2f}'.format( salario ) ) } ' )
+
+    print()
+    Pausar( f'Total pago: { '{:.2f}'.format( totalPagamento ) }' )
 
 
 def ImprimeInformacaoFuncionario( selecaoFuncionario, selecaoCargo, selecaoDep ):
-    print( f'Nome...........: { selecaoFuncionario[ FUNCIONARIO_NOME ] }' )
-    print( f'CPF............: { selecaoFuncionario[ FUNCIONARIO_CPF ] }' )
-    print( f'Cargo..........: { selecaoFuncionario[ FUNCIONARIO_CARGO ] } - { selecaoCargo[ CARGO_NOME ] }' )
-    print( f'Departamento...: { selecaoCargo[ CARGO_ID_DEP ] } - { selecaoDep[ DEPARTAMENTO_NOME ] }' )
-    print( f'CNH............: { selecaoFuncionario[ FUNCIONARIO_CNH ] }' )
-    print( f'Advertencia....: { selecaoFuncionario[ FUNCIONARIO_ADVERTENCIA ] }' )
-    print( f'Dependentes....: { selecaoFuncionario[ FUNCIONARIO_DEPENDENTE ] }' )
-    print( f'Nivel Ensino...: { selecaoFuncionario[ FUNCIONARIO_NIVEL_ENSINO ] }' )
-    print( f'Vale Transporte: { selecaoFuncionario[ FUNCIONARIO_VALE_TRANSPORTE ] }' )
-    print( f'Data admissão..: { selecaoFuncionario[ FUNCIONARIO_DATA_ADMISSAO ] }' )
-    print( f'Data demissão..: { selecaoFuncionario[ FUNCIONARIO_DATA_DEMISSAO ] }' )
-    print( f'E-mail.........: { selecaoFuncionario[ FUNCIONARIO_EMAIL ] }' )
-    input()
+    print( f'Nome...........: { selecaoFuncionario[ Funcionario.NOME ] }' )
+    print( f'CPF............: { selecaoFuncionario[ Funcionario.CPF ] }' )
+    print( f'Cargo..........: { selecaoFuncionario[ Funcionario.CARGO ] } - { selecaoCargo[ Cargo.NOME ] }' )
+    print( f'Departamento...: { selecaoCargo[ Cargo.ID_DEP ] } - { selecaoDep[ Departamento.NOME ] }' )
+    print( f'CNH............: { selecaoFuncionario[ Funcionario.CNH ] }' )
+    print( f'Advertencia....: { selecaoFuncionario[ Funcionario.ADVERTENCIA ] }' )
+    print( f'Dependentes....: { selecaoFuncionario[ Funcionario.DEPENDENTE ] }' )
+    print( f'Nivel Ensino...: { selecaoFuncionario[ Funcionario.NIVEL_ENSINO ] }' )
+    print( f'Vale Transporte: { selecaoFuncionario[ Funcionario.VALE_TRANSPORTE ] }' )
+    print( f'Data admissão..: { selecaoFuncionario[ Funcionario.DATA_ADMISSAO ] }' )
+    print( f'Data demissão..: { selecaoFuncionario[ Funcionario.DATA_DEMISSAO ] }' )
+    print( f'E-mail.........: { selecaoFuncionario[ Funcionario.EMAIL ] }' )
+    
+    # Criar opção para alterar dados do funcinário
+    Pausar( 'Tecle algum teclado para sair voltar ao Menu...' )
 
 
 def DesligarFuncionario( cursor, conexaoinformacaoRH ):
@@ -760,15 +692,14 @@ def DesligarFuncionario( cursor, conexaoinformacaoRH ):
         verificaAtivos = cursor.fetchall()
 
         if not verificaAtivos:
-            print( 'Não há nenhum funcionário ativo para desligar' )
-            input()
+            Pausar( 'Não há nenhum funcionário ativo para desligar' )
             return
         
         LimparTela()
 
         print( '--- Desligamento de Funcionário ---' )
         for funcionario in verificaAtivos:
-            print( f'{ funcionario[ FUNCIONARIO_ID ] } - { funcionario[ FUNCIONARIO_NOME ] }' )
+            print( f'{ funcionario[ Funcionario.ID ] } - { funcionario[ Funcionario.NOME ] }' )
 
         print()
         selecaoDesligamento = InputInt( 'Digite o ID do Colaborador a desligar: ' )
@@ -776,7 +707,7 @@ def DesligarFuncionario( cursor, conexaoinformacaoRH ):
             return
         
         dadosColaborador = next(
-                                    ( colaborador for colaborador in verificaAtivos if colaborador[ FUNCIONARIO_ID ] == selecaoDesligamento ),
+                                    ( colaborador for colaborador in verificaAtivos if colaborador[ Funcionario.ID ] == selecaoDesligamento ),
                                     None
                                 )
         if not dadosColaborador:
@@ -788,17 +719,16 @@ def DesligarFuncionario( cursor, conexaoinformacaoRH ):
             else:
                 continue
         
-        dadosCargo = BuscarCargo( cursor, dadosColaborador[ FUNCIONARIO_CARGO ] )
+        dadosCargo = BuscarCargo( cursor, dadosColaborador[ Funcionario.CARGO ] )
 
-        print( f'Colaborador..: { dadosColaborador[ FUNCIONARIO_NOME ] }' )
-        print( f'Cargo........: { dadosColaborador[ FUNCIONARIO_CARGO ] } - { dadosCargo[ CARGO_NOME ] }' )
-        print( f'Data admissão: { dadosColaborador[ FUNCIONARIO_DATA_ADMISSAO ] }' )
+        print( f'Colaborador..: { dadosColaborador[ Funcionario.NOME ] }' )
+        print( f'Cargo........: { dadosColaborador[ Funcionario.CARGO ] } - { dadosCargo[ Cargo.NOME ] }' )
+        print( f'Data admissão: { dadosColaborador[ Funcionario.DATA_ADMISSAO ] }' )
         print()
         
         confirmaDesligamento = Confirmacao( 'Deseja realmente desligar o colaborador(S/N)? ' )
         if not confirmaDesligamento:
-            print( 'Desligamento cancelado!' )
-            input()
+            Pausar( 'Desligamento cancelado!' )
             continue
 
         cursor.execute(

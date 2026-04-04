@@ -34,11 +34,12 @@ O sistema permite o controle de funcionários, cargos, departamentos e o process
 
 ## 🚧 Melhorias Futuras
 
-* 🔧 Implementar desligamento de funcionários (status = "D")
-* 🔧 Implementar validação de dados com Regex
-* 🔧 Melhorar estrutura do código (modularização)
 * 🔧 Otimização de consultas SQL com JOIN
-* 🔧 Implementação de relatórios completos de folha
+* 🔧 Implementação da possibilidade de alterar dados cadastrais registradas
+* 🔧 Adaptação do projeto a modelo com interface gráfica com Pyside6
+* 🔧 Adaptação do projeto a POO
+* 🔧 Modularização mais detalhada
+* 🔧 Corrigir o erro de permitir cadastrar mais do que a quantidade máxima de funcionários por cargo
 
 ---
 
@@ -48,11 +49,3 @@ Será implementada uma nova regra de cálculo salarial:
 
 * A cada **5 anos de empresa**, o funcionário receberá um **acréscimo de 5% no salário**
 * O aumento será **cumulativo**
-
-### Exemplo
-
-| Tempo de empresa | Aumento |
-| ---------------- | ------- |
-| 5 anos           | +5%     |
-| 10 anos          | +10%    |
-| 15 anos          | +15%    |
